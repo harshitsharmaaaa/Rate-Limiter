@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  
+}
+
+enum MethodType {
+  GET
+  POST
+  PUT
+  PATCH
+  DELETE
+}
+
+enum Plan {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+enum Algorithm {
+  FIXED_WINDOW
+  SLIDING_WINDOW
+  TOKEN_BUCKET
+  LEAKY_BUCKET
+}
+
+model User {
+  id            Int       @id @default(autoincrement())
+  email         String    @unique
+  password_hash String
+  created_at    DateTime  @default(now())
+  projects      Project[]
+}
+
+model Project {
+  id          Int       @id @default(autoincrement())
+  name        String
+  description String?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+  owner_id    Int
+  owner        User      @relation(fields: [owner_id], references: [id])
+  api_keys     ApiKey[]
+  rate_limits  RateLimitRule[]
+  usage_stats  UsageStat[]
+}
+
+model ApiKey {
+  id          Int       @id @default(autoincrement())
+  name        String
+  key_hash    String    @unique
+  plan        Plan
+  active      Boolean   @default(true)
+  created_at  DateTime  @default(now())
+  expires_at  DateTime?
+  project_id  Int
+  project     Project   @relation(fields: [project_id], references: [id])
+  request_logs RequestLog[]
+}
+
+model RateLimitRule {
+  id          Int       @id @default(autoincrement())
+  algorithm   Algorithm
+  limit       Int
+  window      Int
+  endpoint    String
+  enabled     Boolean   @default(true)
+  project_id  Int
+  project     Project   @relation(fields: [project_id], references: [id])
+}
+
+model UsageStat {
+  id                  Int       @id @default(autoincrement())
+  total_requests      Int
+  allowed_requests    Int
+  blocked_requests    Int
+  avg_response_time   Int
+  timestamp           DateTime  @default(now())
+  project_id          Int
+  project             Project   @relation(fields: [project_id], references: [id])
+}
+
+model RequestLog {
+  id                Int         @id @default(autoincrement())
+  endpoint          String
+  method            MethodType
+  ip                String
+  status_code       Int
+  allowed           Boolean
+  response_time_ms  Int
+  timestamp         DateTime    @default(now())
+  api_key_id        Int
+  api_key           ApiKey      @relation(fields: [api_key_id], references: [id])
+}
