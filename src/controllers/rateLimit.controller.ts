@@ -27,9 +27,9 @@ export async function getRules(req: FastifyRequest, reply: FastifyReply) {
 export async function updateRule(req: FastifyRequest, reply: FastifyReply) {
   try {
     const user = req.user as { id: number; email: string };
-    const params = req.params as { id: string };
+    const params = req.params as { ruleId: string };
     return reply.send(
-      await rateLimitService.updateRule(user.id, params.id, req.body as { endpoint?: string; algorithm?: "FIXED_WINDOW" | "SLIDING_WINDOW" | "TOKEN_BUCKET" | "LEAKY_BUCKET"; limit?: number; window?: number; enabled?: boolean })
+      await rateLimitService.updateRule(user.id, params.ruleId, req.body as { endpoint?: string; algorithm?: "FIXED_WINDOW" | "SLIDING_WINDOW" | "TOKEN_BUCKET" | "LEAKY_BUCKET"; limit?: number; window?: number; enabled?: boolean })
     );
   } catch (error) {
     return reply.status(400).send(failure(error instanceof Error ? error.message : "Rate limit update failed"));
@@ -39,8 +39,8 @@ export async function updateRule(req: FastifyRequest, reply: FastifyReply) {
 export async function deleteRule(req: FastifyRequest, reply: FastifyReply) {
   try {
     const user = req.user as { id: number; email: string };
-    const params = req.params as { id: string };
-    return reply.send(await rateLimitService.deleteRule(user.id, params.id));
+    const params = req.params as { ruleId: string };
+    return reply.send(await rateLimitService.deleteRule(user.id, params.ruleId));
   } catch (error) {
     return reply.status(400).send(failure(error instanceof Error ? error.message : "Rate limit delete failed"));
   }
