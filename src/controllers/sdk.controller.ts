@@ -22,11 +22,14 @@ export async function checkRateLimit(
       endpoint,
       method
     );
-    if (result.allowed) {
-      return reply.status(200).send(success("Request allowed",result));
+    if (!result.allowed) {
+        return reply.status(429).send({
+          success: false,
+          message: "Rate limit exceeded",
+          data: result,
+        });
     }
-
-    return reply.send();
+    return reply.status(200).send(success("Request allowed",result));
   } catch (error) {
     return reply.status(400).send(
       failure(
@@ -37,3 +40,5 @@ export async function checkRateLimit(
     );
   }
 }
+
+

@@ -7,6 +7,7 @@ import type {
   UpdateRateLimitRuleBody,
 } from "../types/types.ts";
 import { generateApiKey } from "../utils/generateApiKey.ts";
+import { hashApiKey, hashPassword } from "../utils/hash.ts";
 
 function normalizeProjectId(value: string | number) {
   const id = Number(value);
@@ -131,7 +132,7 @@ export async function createApiKey(
   }
 
   const key = generateApiKey();
-  const key_hash = key;
+  const key_hash = hashApiKey(key);
 
   const apiKey = await prisma.apiKey.create({
     data: {

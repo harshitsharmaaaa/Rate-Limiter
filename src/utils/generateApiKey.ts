@@ -1,5 +1,5 @@
 import crypto from "crypto";
 
 export function generateApiKey() {
-  return crypto.randomBytes(32).toString("hex");
+  return `sk_live_${crypto.randomBytes(32).toString("hex")}`;
 }

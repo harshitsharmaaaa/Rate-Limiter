@@ -26,9 +26,9 @@ export async function fixedWindow({
   const ttl = await redis.ttl(key);
 
   return {
-    allowed: count <= limit,
-    remainingRequests: Math.max(limit - count, 0),
-    retry: ttl > 0,
-    total: limit,
+  allowed: count <= limit,
+  remainingRequests: Math.max(limit - count, 0),
+  retryAfter: ttl,
+  total: limit,
   };
 }

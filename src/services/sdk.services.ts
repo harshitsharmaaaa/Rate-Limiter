@@ -1,6 +1,7 @@
 import {prisma} from "../db/prisma.ts";
 import { hashApiKey } from "../utils/apiKeys.ts";
 import { fixedWindow } from "../algorithms/fixedWindow.ts";
+import { slidingWindow } from "../algorithms/slidingWindow.ts";
 
 export async function checkRateLimit(
   apiKey: string,
@@ -50,7 +51,12 @@ export async function checkRateLimit(
       });
 
     case "SLIDING_WINDOW":
-      throw new Error("Sliding Window not implemented");
+      return slidingWindow({
+        apiKey,
+        endpoint,
+        limit: rule.limit,
+        window: rule.window,
+      });
 
     case "TOKEN_BUCKET":
       throw new Error("Token Bucket not implemented");
