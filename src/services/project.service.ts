@@ -238,6 +238,7 @@ export async function createRateLimitRule(
       algorithm: data.algorithm,
       limit: data.limit,
       window: data.window,
+      method: data.method,
       enabled: data.enabled ?? true,
     },
   });
@@ -320,3 +321,4 @@ export async function deleteRateLimitRule(
   await prisma.rateLimitRule.delete({ where: { id } });
   return { message: "Rate Limit Rule deleted successfully" };
 }
+

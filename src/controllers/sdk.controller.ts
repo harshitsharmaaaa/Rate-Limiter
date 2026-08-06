@@ -20,7 +20,8 @@ export async function checkRateLimit(
     const result = await sdkService.checkRateLimit(
       apiKey,
       endpoint,
-      method
+      method,
+      req.ip
     );
     if (!result.allowed) {
         return reply.status(429).send({

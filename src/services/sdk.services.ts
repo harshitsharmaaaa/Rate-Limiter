@@ -4,11 +4,12 @@ import { fixedWindow } from "../algorithms/fixedWindow.ts";
 import { slidingWindow } from "../algorithms/slidingWindow.ts";
 import { tokenBucket } from "../algorithms/tokenBucket.ts";
 import { leakyBucket } from "../algorithms/leakyBucket.ts";
-
+import type { MethodType } from "../../generated/prisma/enums.ts";
 export async function checkRateLimit(
   apiKey: string,
   endpoint: string,
-  method: string
+  method: string,
+  ip: string
 ) {
   const hashedKey = hashApiKey(apiKey);
 
@@ -35,7 +36,7 @@ export async function checkRateLimit(
       project_id: key.project_id,
       endpoint,
       enabled: true,
-      // method, // Uncomment after adding method to schema
+      method: method as MethodType,
     },
   });
 
@@ -43,40 +44,62 @@ export async function checkRateLimit(
     throw new Error("No rate limit rule found");
   }
 
+  let result;
+
   switch (rule.algorithm) {
-    case "FIXED_WINDOW":
-      return fixedWindow({
-        apiKey,
-        endpoint,
-        limit: rule.limit,
-        window: rule.window,
-      });
+  case "FIXED_WINDOW":
+    result = await fixedWindow({
+      apiKey,
+      endpoint,
+      limit: rule.limit,
+      window: rule.window,
+    });
+    break;
 
-    case "SLIDING_WINDOW":
-      return slidingWindow({
-        apiKey,
-        endpoint,
-        limit: rule.limit,
-        window: rule.window,
-      });
+  case "SLIDING_WINDOW":
+    result = await slidingWindow({
+      apiKey,
+      endpoint,
+      limit: rule.limit,
+      window: rule.window,
+    });
+    break;
 
-    case "TOKEN_BUCKET":
-      return tokenBucket({
-        apiKey,
-        endpoint,
-        limit: rule.limit,
-        window: rule.window,
-      });
+  case "TOKEN_BUCKET":
+    result = await tokenBucket({
+      apiKey,
+      endpoint,
+      limit: rule.limit,
+      window: rule.window,
+    });
+    break;
 
-    case "LEAKY_BUCKET":
-      return leakyBucket({
-        apiKey,
-        endpoint,
-        limit: rule.limit,
-        window: rule.window,
-      });
+  case "LEAKY_BUCKET":
+    result = await leakyBucket({
+      apiKey,
+      endpoint,
+      limit: rule.limit,
+      window: rule.window,
+    });
+    break;
 
-    default:
-      throw new Error("Unknown algorithm");
+  default:
+    throw new Error("Unknown algorithm");
+
   }
+
+  await prisma.requestLog.create({
+    data: {
+      endpoint,
+      method: method as MethodType,
+      ip,
+      status_code: result.allowed ? 200 : 429,
+      allowed: result.allowed,
+      response_time_ms: 0,
+      api_key_id: key.id,
+    }
+  });
+
+
+return result;
 }

@@ -68,6 +68,7 @@ model RateLimitRule {
   algorithm   Algorithm
   limit       Int
   window      Int
+  method      MethodType
   endpoint    String
   enabled     Boolean   @default(true)
   project_id  Int
