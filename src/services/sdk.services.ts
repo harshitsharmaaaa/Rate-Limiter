@@ -3,6 +3,7 @@ import { hashApiKey } from "../utils/apiKeys.ts";
 import { fixedWindow } from "../algorithms/fixedWindow.ts";
 import { slidingWindow } from "../algorithms/slidingWindow.ts";
 import { tokenBucket } from "../algorithms/tokenBucket.ts";
+import { leakyBucket } from "../algorithms/leakyBucket.ts";
 
 export async function checkRateLimit(
   apiKey: string,
@@ -68,7 +69,12 @@ export async function checkRateLimit(
       });
 
     case "LEAKY_BUCKET":
-      throw new Error("Leaky Bucket not implemented");
+      return leakyBucket({
+        apiKey,
+        endpoint,
+        limit: rule.limit,
+        window: rule.window,
+      });
 
     default:
       throw new Error("Unknown algorithm");
