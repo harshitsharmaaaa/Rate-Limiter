@@ -2,6 +2,7 @@ import {prisma} from "../db/prisma.ts";
 import { hashApiKey } from "../utils/apiKeys.ts";
 import { fixedWindow } from "../algorithms/fixedWindow.ts";
 import { slidingWindow } from "../algorithms/slidingWindow.ts";
+import { tokenBucket } from "../algorithms/tokenBucket.ts";
 
 export async function checkRateLimit(
   apiKey: string,
@@ -59,7 +60,12 @@ export async function checkRateLimit(
       });
 
     case "TOKEN_BUCKET":
-      throw new Error("Token Bucket not implemented");
+      return tokenBucket({
+        apiKey,
+        endpoint,
+        limit: rule.limit,
+        window: rule.window,
+      });
 
     case "LEAKY_BUCKET":
       throw new Error("Leaky Bucket not implemented");
