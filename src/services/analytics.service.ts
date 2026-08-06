@@ -9,37 +9,77 @@ function normalizeProjectId(value: string | number) {
 }
 
 export async function getOverview(ownerId: number, projectId: string | number) {
+  console.log("Owner ID:", ownerId);
+  console.log("Project ID:", projectId);
+
   const id = normalizeProjectId(projectId);
+
   const project = await prisma.project.findFirst({
-    where: { id, owner_id: ownerId },
+    where: {
+      id,
+      owner_id: ownerId,
+    },
   });
+
+  
 
   if (!project) {
     throw new Error("Project not found");
   }
 
-  const [usage, requestCount] = await Promise.all([
-    prisma.usageStat.findFirst({
-      where: { project_id: id },
-      orderBy: { timestamp: "desc" },
-    }),
-    prisma.requestLog.count({
-      where: {
-        api_key: {
-          project_id: id,
-        },
+  const [
+  totalRequests,
+  allowedRequests,
+  blockedRequests,
+  avgResponseTime,
+] = await Promise.all([
+  prisma.requestLog.count({
+    where: {
+      api_key: {
+        project_id: id,
       },
-    }),
-  ]);
+    },
+  }),
+
+  prisma.requestLog.count({
+    where: {
+      api_key: {
+        project_id: id,
+        },
+      allowed: true,
+    },
+  }),
+
+  prisma.requestLog.count({
+    where: {
+      api_key: {
+        project_id: id,
+      },
+      allowed: false,
+    },
+  }),
+
+  prisma.requestLog.aggregate({
+    where: {
+      api_key: {
+        project_id: id,
+      },
+    },
+    _avg: {
+      response_time_ms: true,
+    },
+  }),
+]);
 
   return {
-    overview: {
-      total_requests: usage?.total_requests ?? requestCount,
-      allowed_requests: usage?.allowed_requests ?? 0,
-      blocked_requests: usage?.blocked_requests ?? 0,
-      avg_response_time: usage?.avg_response_time ?? 0,
-    },
-  };
+  overview: {
+    total_requests: totalRequests,
+    allowed_requests: allowedRequests,
+    blocked_requests: blockedRequests,
+    avg_response_time:
+      avgResponseTime._avg.response_time_ms ?? 0,
+  },
+};
 }
 
 export async function getLogs(ownerId: number, projectId: string | number) {
