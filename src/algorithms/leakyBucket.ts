@@ -1,10 +1,12 @@
 import { redis } from "../db/redis.ts";
+import type { RateLimitResult } from "../types/types.ts";
+import { createRateLimitResult } from "../utils/rateLimit.ts";
 
 interface LeakyBucketOptions {
   apiKey: string;
   endpoint: string;
-  limit: number;      
-  window: number;     
+  limit: number;
+  window: number;
 }
 
 export async function leakyBucket({
@@ -12,13 +14,10 @@ export async function leakyBucket({
   endpoint,
   limit,
   window,
-}: LeakyBucketOptions) {
+}: LeakyBucketOptions): Promise<RateLimitResult> {
   const key = `leaky_bucket:${apiKey}:${endpoint}`;
-
   const now = Date.now();
-
   const leakRate = limit / window;
-
   const bucket = await redis.hgetall(key);
 
   let water: number;
@@ -33,20 +32,18 @@ export async function leakyBucket({
   }
 
   const elapsed = (now - lastLeak) / 1000;
-
   const leaked = elapsed * leakRate;
-
   water = Math.max(0, water - leaked);
 
   if (water >= limit) {
     const retryAfter = Math.ceil((water - limit + 1) / leakRate);
-
-    return {
-      allowed: false,
-      remainingRequests: 0,
+    return createRateLimitResult(
+      false,
+      limit,
+      0,
       retryAfter,
-      total: limit,
-    };
+      Math.floor((now + retryAfter * 1000) / 1000)
+    );
   }
 
   water += 1;
@@ -58,10 +55,11 @@ export async function leakyBucket({
 
   await redis.expire(key, window);
 
-  return {
-    allowed: true,
-    remainingRequests: Math.max(0, Math.floor(limit - water)),
-    retryAfter: 0,
-    total: limit,
-  };
+  return createRateLimitResult(
+    true,
+    limit,
+    Math.max(0, Math.floor(limit - water)),
+    0,
+    Math.floor((now + window * 1000) / 1000)
+  );
 }

@@ -1,6 +1,8 @@
 import {
   createApiKey as createProjectApiKey,
   deleteApiKey as deleteProjectApiKey,
+  disableApiKey as disableProjectApiKey,
+  enableApiKey as enableProjectApiKey,
   getApiKeys as getProjectApiKeys,
   regenerateApiKey as regenerateProjectApiKey,
 } from "./project.service.ts";
@@ -20,6 +22,14 @@ export async function getApiKeys(ownerId: number, projectId: string | number) {
 
 export async function regenerateApiKey(ownerId: number, keyId: string | number) {
   return regenerateProjectApiKey(ownerId, keyId);
+}
+
+export async function enableApiKey(ownerId: number, keyId: string | number) {
+  return enableProjectApiKey(ownerId, keyId);
+}
+
+export async function disableApiKey(ownerId: number, keyId: string | number) {
+  return disableProjectApiKey(ownerId, keyId);
 }
 
 export async function deleteApiKey(ownerId: number, keyId: string | number) {

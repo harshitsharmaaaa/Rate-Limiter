@@ -34,6 +34,26 @@ export async function regenerateApiKey(req: FastifyRequest, reply: FastifyReply)
   }
 }
 
+export async function enableApiKey(req: FastifyRequest, reply: FastifyReply) {
+  try {
+    const user = req.user as { id: number; email: string };
+    const params = req.params as { keyId: string };
+    return reply.send(await apiKeyService.enableApiKey(user.id, params.keyId));
+  } catch (error) {
+    return reply.status(400).send(failure(error instanceof Error ? error.message : "API key enable failed"));
+  }
+}
+
+export async function disableApiKey(req: FastifyRequest, reply: FastifyReply) {
+  try {
+    const user = req.user as { id: number; email: string };
+    const params = req.params as { keyId: string };
+    return reply.send(await apiKeyService.disableApiKey(user.id, params.keyId));
+  } catch (error) {
+    return reply.status(400).send(failure(error instanceof Error ? error.message : "API key disable failed"));
+  }
+}
+
 export async function deleteApiKey(req: FastifyRequest, reply: FastifyReply) {
   try {
     const user = req.user as { id: number; email: string };

@@ -25,6 +25,25 @@ function normalizeId(value: string | number, label: string) {
   return id;
 }
 
+async function findOwnedApiKey(ownerId: number, keyId: string | number) {
+  const id = normalizeId(keyId, "api key id");
+
+  const apiKey = await prisma.apiKey.findFirst({
+    where: {
+      id,
+      project: {
+        owner_id: ownerId,
+      },
+    },
+  });
+
+  if (!apiKey) {
+    throw new Error("API key not found");
+  }
+
+  return apiKey;
+}
+
 export async function createProject(ownerId: number, data: CreateProjectBody) {
   const name = data.name.trim();
   const description = data.description?.trim() || null;
@@ -139,6 +158,7 @@ export async function createApiKey(
       name: data.name.trim(),
       key_hash,
       plan: data.plan,
+      active: true,
       expires_at: data.expiresAt ?? null,
       project_id: id,
     },
@@ -172,24 +192,12 @@ export async function regenerateApiKey(
   ownerId: number,
   keyId: string | number
 ) {
-  const id = normalizeId(keyId, "api key id");
-  const apiKey = await prisma.apiKey.findFirst({
-    where: {
-      id,
-      project: {
-        owner_id: ownerId,
-      },
-    },
-  });
-
-  if (!apiKey) {
-    throw new Error("API key not found");
-  }
+  const apiKey = await findOwnedApiKey(ownerId, keyId);
 
   const plainKey = generateApiKey();
   const updated = await prisma.apiKey.update({
-    where: { id },
-    data: { key_hash: plainKey },
+    where: { id: apiKey.id },
+    data: { key_hash: hashApiKey(plainKey) },
   });
 
   return {
@@ -198,22 +206,40 @@ export async function regenerateApiKey(
   };
 }
 
-export async function deleteApiKey(ownerId: number, keyId: string | number) {
-  const id = normalizeId(keyId, "api key id");
-  const apiKey = await prisma.apiKey.findFirst({
-    where: {
-      id,
-      project: {
-        owner_id: ownerId,
-      },
-    },
-  });
+export async function enableApiKey(ownerId: number, keyId: string | number) {
+  const apiKey = await findOwnedApiKey(ownerId, keyId);
 
-  if (!apiKey) {
-    throw new Error("API key not found");
+  if (apiKey.active) {
+    return { api_key: apiKey, message: "API key is already enabled" };
   }
 
-  await prisma.apiKey.delete({ where: { id } });
+  const updated = await prisma.apiKey.update({
+    where: { id: apiKey.id },
+    data: { active: true },
+  });
+
+  return { api_key: updated, message: "API key enabled successfully" };
+}
+
+export async function disableApiKey(ownerId: number, keyId: string | number) {
+  const apiKey = await findOwnedApiKey(ownerId, keyId);
+
+  if (!apiKey.active) {
+    return { api_key: apiKey, message: "API key is already disabled" };
+  }
+
+  const updated = await prisma.apiKey.update({
+    where: { id: apiKey.id },
+    data: { active: false },
+  });
+
+  return { api_key: updated, message: "API key disabled successfully" };
+}
+
+export async function deleteApiKey(ownerId: number, keyId: string | number) {
+  const apiKey = await findOwnedApiKey(ownerId, keyId);
+
+  await prisma.apiKey.delete({ where: { id: apiKey.id } });
   return { message: "API Key deleted successfully" };
 }
 
@@ -321,4 +347,3 @@ export async function deleteRateLimitRule(
   await prisma.rateLimitRule.delete({ where: { id } });
   return { message: "Rate Limit Rule deleted successfully" };
 }
-

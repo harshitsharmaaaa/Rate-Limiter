@@ -1,10 +1,12 @@
 import { redis } from "../db/redis.ts";
+import type { RateLimitResult } from "../types/types.ts";
+import { createRateLimitResult } from "../utils/rateLimit.ts";
 
 interface TokenBucketOptions {
   apiKey: string;
   endpoint: string;
-  limit: number;     
-  window: number;    
+  limit: number;
+  window: number;
 }
 
 export async function tokenBucket({
@@ -12,13 +14,10 @@ export async function tokenBucket({
   endpoint,
   limit,
   window,
-}: TokenBucketOptions) {
+}: TokenBucketOptions): Promise<RateLimitResult> {
   const key = `token_bucket:${apiKey}:${endpoint}`;
-
   const now = Date.now();
-
   const refillRate = limit / window;
-
   const bucket = await redis.hgetall(key);
 
   let tokens: number;
@@ -33,18 +32,17 @@ export async function tokenBucket({
   }
 
   const elapsed = (now - lastRefill) / 1000;
-
   tokens = Math.min(limit, tokens + elapsed * refillRate);
 
   if (tokens < 1) {
     const retryAfter = Math.ceil((1 - tokens) / refillRate);
-
-    return {
-      allowed: false,
-      remainingRequests: 0,
+    return createRateLimitResult(
+      false,
+      limit,
+      0,
       retryAfter,
-      total: limit,
-    };
+      Math.floor((now + retryAfter * 1000) / 1000)
+    );
   }
 
   tokens -= 1;
@@ -56,10 +54,11 @@ export async function tokenBucket({
 
   await redis.expire(key, window);
 
-  return {
-    allowed: true,
-    remainingRequests: Math.floor(tokens),
-    retryAfter: 0,
-    total: limit,
-  };
+  return createRateLimitResult(
+    true,
+    limit,
+    Math.floor(tokens),
+    0,
+    Math.floor((now + window * 1000) / 1000)
+  );
 }

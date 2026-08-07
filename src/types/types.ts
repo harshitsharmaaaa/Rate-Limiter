@@ -1,4 +1,4 @@
-import type{ Plan, Algorithm } from "../../generated/prisma/client";
+export type { Plan, Algorithm } from "../../generated/prisma/client";
 import type { MethodType } from "../../generated/prisma/enums.ts";
 
 export interface RegisterBody {
@@ -28,6 +28,14 @@ export interface CreateApiKeyBody {
 }
 
 export type methodType = MethodType;
+
+export interface RateLimitResult {
+  allowed: boolean;
+  total: number;
+  remainingRequests: number;
+  retryAfter: number;
+  reset: number;
+}
 
 export interface CreateRateLimitRuleBody {
   endpoint: string;
