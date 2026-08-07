@@ -1,9 +1,10 @@
 import { prisma } from "../db/prisma.ts";
+import { BadRequestError, NotFoundError } from "../errors/app-errors.ts";
 
 function normalizeProjectId(value: string | number) {
   const id = Number(value);
   if (!Number.isInteger(id) || id <= 0) {
-    throw new Error("Invalid project id");
+    throw new BadRequestError("Invalid project id");
   }
   return id;
 }
@@ -24,7 +25,7 @@ export async function getOverview(ownerId: number, projectId: string | number) {
   
 
   if (!project) {
-    throw new Error("Project not found");
+    throw new NotFoundError("Project not found");
   }
 
   const [
@@ -89,7 +90,7 @@ export async function getLogs(ownerId: number, projectId: string | number) {
   });
 
   if (!project) {
-    throw new Error("Project not found");
+    throw new NotFoundError("Project not found");
   }
 
   const logs = await prisma.requestLog.findMany({
@@ -120,7 +121,7 @@ export async function getEndpointAnalytics(
   });
 
   if (!project) {
-    throw new Error("Project not found");
+    throw new NotFoundError("Project not found");
   }
 
   const logs = await prisma.requestLog.findMany({
@@ -182,7 +183,7 @@ export async function getMethodAnalytics(
   });
 
   if (!project) {
-    throw new Error("Project not found");
+    throw new NotFoundError("Project not found");
   }
 
   const logs = await prisma.requestLog.findMany({
@@ -222,7 +223,7 @@ export async function getStatusAnalytics(
   });
 
   if (!project) {
-    throw new Error("Project not found");
+    throw new NotFoundError("Project not found");
   }
 
   const logs = await prisma.requestLog.findMany({
@@ -258,7 +259,7 @@ export async function getTimelineAnalytics(
   });
 
   if (!project) {
-    throw new Error("Project not found");
+    throw new NotFoundError("Project not found");
   }
 
   const logs = await prisma.requestLog.findMany({
@@ -302,7 +303,7 @@ export async function getPerformanceAnalytics(
   });
 
   if (!project) {
-    throw new Error("Project not found");
+    throw new NotFoundError("Project not found");
   }
 
   const logs = await prisma.requestLog.findMany({

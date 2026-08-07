@@ -7,6 +7,11 @@ import { leakyBucket } from "../algorithms/leakyBucket.ts";
 import type { MethodType } from "../../generated/prisma/enums.ts";
 import type { RateLimitResult } from "../types/types.ts";
 import { applyPlanPolicy } from "./planEnforcement.ts";
+import {
+  BadRequestError,
+  NotFoundError,
+  UnauthorizedError,
+} from "../errors/app-errors.ts";
 
 export async function checkRateLimit(
   apiKey: string,
@@ -23,15 +28,15 @@ export async function checkRateLimit(
   });
 
   if (!key) {
-    throw new Error("Invalid API key");
+    throw new UnauthorizedError("Invalid API key");
   }
 
   if (!key.active) {
-    throw new Error("API key is disabled");
+    throw new UnauthorizedError("API key is disabled");
   }
 
   if (key.expires_at && key.expires_at < new Date()) {
-    throw new Error("API key has expired");
+    throw new UnauthorizedError("API key has expired");
   }
 
   const rule = await prisma.rateLimitRule.findFirst({
@@ -44,7 +49,7 @@ export async function checkRateLimit(
   });
 
   if (!rule) {
-    throw new Error("No rate limit rule found");
+    throw new NotFoundError("No rate limit rule found");
   }
 
   const { effectiveLimit, effectiveWindow } = applyPlanPolicy(
@@ -89,7 +94,7 @@ export async function checkRateLimit(
       });
       break;
     default:
-      throw new Error("Unknown algorithm");
+      throw new BadRequestError("Unknown algorithm");
   }
 
   await prisma.requestLog.create({

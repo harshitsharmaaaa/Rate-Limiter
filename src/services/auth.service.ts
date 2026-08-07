@@ -1,4 +1,10 @@
 import { prisma } from "../db/prisma.ts";
+import {
+  BadRequestError,
+  ConflictError,
+  NotFoundError,
+  UnauthorizedError,
+} from "../errors/app-errors.ts";
 import { comparePassword, hashPassword } from "../utils/hash.ts";
 import { generateToken } from "../utils/jwt.ts";
 import type { LoginBody, RegisterBody } from "../types/types.ts";
@@ -8,7 +14,7 @@ export async function register(data: RegisterBody) {
   const password = data.password.trim();
 
   if (!email || !password) {
-    throw new Error("Email and password are required");
+    throw new BadRequestError("Email and password are required");
   }
 
   const existingUser = await prisma.user.findUnique({
@@ -16,7 +22,7 @@ export async function register(data: RegisterBody) {
   });
 
   if (existingUser) {
-    throw new Error("User already exists");
+    throw new ConflictError("User already exists");
   }
 
   const passwordHash = await hashPassword(password);
@@ -44,7 +50,7 @@ export async function login(data: LoginBody) {
   const password = data.password.trim();
 
   if (!email || !password) {
-    throw new Error("Email and password are required");
+    throw new BadRequestError("Email and password are required");
   }
 
   const user = await prisma.user.findUnique({
@@ -52,13 +58,13 @@ export async function login(data: LoginBody) {
   });
 
   if (!user) {
-    throw new Error("Invalid credentials");
+    throw new UnauthorizedError("Invalid credentials");
   }
 
   const isPasswordCorrect = await comparePassword(password, user.password_hash);
 
   if (!isPasswordCorrect) {
-    throw new Error("Invalid credentials");
+    throw new UnauthorizedError("Invalid credentials");
   }
 
   return {
@@ -83,7 +89,7 @@ export async function me(userId: number) {
   });
 
   if (!user) {
-    throw new Error("User not found");
+    throw new NotFoundError("User not found");
   }
 
   return { user };

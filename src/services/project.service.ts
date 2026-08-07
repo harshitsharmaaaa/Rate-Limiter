@@ -1,4 +1,5 @@
 import { prisma } from "../db/prisma.ts";
+import { BadRequestError, NotFoundError } from "../errors/app-errors.ts";
 import type {
   CreateProjectBody,
   UpdateProjectBody,
@@ -12,7 +13,7 @@ import { hashApiKey, hashPassword } from "../utils/hash.ts";
 function normalizeProjectId(value: string | number) {
   const id = Number(value);
   if (!Number.isInteger(id) || id <= 0) {
-    throw new Error("Invalid project id");
+    throw new BadRequestError("Invalid project id");
   }
   return id;
 }
@@ -20,7 +21,7 @@ function normalizeProjectId(value: string | number) {
 function normalizeId(value: string | number, label: string) {
   const id = Number(value);
   if (!Number.isInteger(id) || id <= 0) {
-    throw new Error(`Invalid ${label}`);
+    throw new BadRequestError(`Invalid ${label}`);
   }
   return id;
 }
@@ -38,7 +39,7 @@ async function findOwnedApiKey(ownerId: number, keyId: string | number) {
   });
 
   if (!apiKey) {
-    throw new Error("API key not found");
+    throw new NotFoundError("API key not found");
   }
 
   return apiKey;
@@ -49,7 +50,7 @@ export async function createProject(ownerId: number, data: CreateProjectBody) {
   const description = data.description?.trim() || null;
 
   if (!name) {
-    throw new Error("Project name is required");
+    throw new BadRequestError("Project name is required");
   }
 
   const project = await prisma.project.create({
@@ -83,7 +84,7 @@ export async function getProject(ownerId: number, projectId: string | number) {
   });
 
   if (!project) {
-    throw new Error("Project not found");
+    throw new NotFoundError("Project not found");
   }
 
   return { project };
@@ -104,7 +105,7 @@ export async function updateProject(
   });
 
   if (!existing) {
-    throw new Error("Project not found");
+    throw new NotFoundError("Project not found");
   }
 
   const project = await prisma.project.update({
@@ -126,7 +127,7 @@ export async function deleteProject(ownerId: number, projectId: string | number)
   });
 
   if (!existing) {
-    throw new Error("Project not found");
+    throw new NotFoundError("Project not found");
   }
 
   await prisma.project.delete({
@@ -147,7 +148,7 @@ export async function createApiKey(
   });
 
   if (!project) {
-    throw new Error("Project not found");
+    throw new NotFoundError("Project not found");
   }
 
   const key = generateApiKey();
@@ -177,7 +178,7 @@ export async function getApiKeys(ownerId: number, projectId: string | number) {
   });
 
   if (!project) {
-    throw new Error("Project not found");
+    throw new NotFoundError("Project not found");
   }
 
   const api_keys = await prisma.apiKey.findMany({
@@ -254,7 +255,7 @@ export async function createRateLimitRule(
   });
 
   if (!project) {
-    throw new Error("Project not found");
+    throw new NotFoundError("Project not found");
   }
 
   const rate_limit_rule = await prisma.rateLimitRule.create({
@@ -282,7 +283,7 @@ export async function getRateLimitRules(
   });
 
   if (!project) {
-    throw new Error("Project not found");
+    throw new NotFoundError("Project not found");
   }
 
   const rate_limit_rules = await prisma.rateLimitRule.findMany({
@@ -309,7 +310,7 @@ export async function updateRateLimitRule(
   });
 
   if (!rule) {
-    throw new Error("Rate limit rule not found");
+    throw new NotFoundError("Rate limit rule not found");
   }
 
   const rate_limit_rule = await prisma.rateLimitRule.update({
@@ -341,7 +342,7 @@ export async function deleteRateLimitRule(
   });
 
   if (!rule) {
-    throw new Error("Rate limit rule not found");
+    throw new NotFoundError("Rate limit rule not found");
   }
 
   await prisma.rateLimitRule.delete({ where: { id } });

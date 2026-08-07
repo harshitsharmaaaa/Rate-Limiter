@@ -1,23 +1,24 @@
 import type{ FastifyReply, FastifyRequest } from "fastify";
 import { verifyToken } from "../utils/jwt";
+import { UnauthorizedError } from "../errors/app-errors.ts";
 
 export async function authMiddleware(
   req: FastifyRequest,
   reply: FastifyReply
 ) {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader) {
+    throw new UnauthorizedError();
+  }
+
+  const [scheme, token] = authHeader.split(" ");
+
+  if (scheme !== "Bearer" || !token) {
+    throw new UnauthorizedError();
+  }
+
   try {
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader) {
-      return reply.status(401).send({ message: "Unauthorized" });
-    }
-
-    const [scheme, token] = authHeader.split(" ");
-
-    if (scheme !== "Bearer" || !token) {
-      return reply.status(401).send({ message: "Unauthorized" });
-    }
-
     const decoded = verifyToken(token);
     const payload = decoded as { id: number; email: string };
 
@@ -25,8 +26,7 @@ export async function authMiddleware(
       id: payload.id,
       email: payload.email,
     };
-
   } catch {
-    return reply.status(401).send({ message: "Invalid Token" });
+    throw new UnauthorizedError("Invalid token");
   }
 }
