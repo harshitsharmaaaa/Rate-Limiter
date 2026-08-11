@@ -65,7 +65,7 @@ await app.register(jwt, {
   secret: process.env.JWT_SECRET ?? "dev-secret",
 });
 
-await app.register(healthRoutes);
+await app.register(healthRoutes, { prefix: "/health" });
 await app.register(authRoutes, { prefix: "/auth" });
 await app.register(projectRoutes, { prefix: "/projects" });
 await app.register(apiKeyRoutes, { prefix: "/api-keys" });
