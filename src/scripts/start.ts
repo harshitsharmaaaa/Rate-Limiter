@@ -37,6 +37,7 @@ async function runMigrations() {
       stdio: "inherit",
       env: {
         ...process.env,
+        DATABASE_URL: process.env.DATABASE_URL,
       },
     });
     console.log("Migrations completed successfully.");
