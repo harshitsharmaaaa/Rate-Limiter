@@ -1,6 +1,5 @@
 node_modules
 npm-debug.log
-bun.lock
 dist
 build
 .env

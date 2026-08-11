@@ -3,18 +3,23 @@ FROM oven/bun:1.3.9-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files first for better caching
-COPY package.json bun.lock* ./
-COPY prisma ./prisma/
+# Set DATABASE_URL for Prisma generate (needs to be set before prisma commands)
+ENV DATABASE_URL="postgresql://build:build@localhost:5432/build?schema=public"
 
-# Install dependencies
+# Copy package files first for better caching
+# bun.lock must be present for --frozen-lockfile (do not ignore it in .dockerignore)
+COPY package.json bun.lock ./
+COPY prisma ./prisma/
+COPY prisma.config.ts ./
+
+# Install dependencies from the lockfile for reproducible builds
 RUN bun install --frozen-lockfile
 
 # Copy source code
 COPY tsconfig.json ./
 COPY src ./src
 
-# Generate Prisma client
+# Generate Prisma client (no live DB needed for generate)
 RUN bunx prisma generate
 
 # ==================== Production Stage ====================
@@ -33,7 +38,9 @@ RUN addgroup -g 1001 -S nodejs && \
 COPY --from=builder --chown=bunuser:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=bunuser:nodejs /app/generated ./generated
 COPY --from=builder --chown=bunuser:nodejs /app/package.json ./
+COPY --from=builder --chown=bunuser:nodejs /app/bun.lock ./
 COPY --from=builder --chown=bunuser:nodejs /app/prisma ./prisma
+COPY --from=builder --chown=bunuser:nodejs /app/prisma.config.ts ./
 
 # Copy source code
 COPY --chown=bunuser:nodejs tsconfig.json ./
@@ -51,9 +58,6 @@ EXPOSE 3000
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD bun run src/scripts/healthcheck.ts || exit 1
-
-# Copy startup script
-COPY --chown=bunuser:nodejs src/scripts ./src/scripts
 
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]
