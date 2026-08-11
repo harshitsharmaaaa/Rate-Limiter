@@ -1,5 +1,7 @@
-export type { Plan, Algorithm } from "../../generated/prisma/client";
+import type { Plan, Algorithm } from "../../generated/prisma/enums.ts";
 import type { MethodType } from "../../generated/prisma/enums.ts";
+
+export type { Plan, Algorithm };
 
 export interface RegisterBody {
   email: string;
