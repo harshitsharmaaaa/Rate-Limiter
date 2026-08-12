@@ -21,7 +21,7 @@ The backend exposes:
 - analytics endpoints
 - a health check
 
-The SDK package exposes a `RateLimiterClient` class that calls the backend's `/sdk/check` endpoint.
+The SDK package exposes a `RateLimiterClient` class that calls the backend's `/sdk/check` endpoint and is officially published on npm as [`ratelimiter-sdk`](https://www.npmjs.com/package/ratelimiter-sdk).
 
 ## Architecture
 
@@ -816,9 +816,17 @@ The effective limit/window are the minimum of the rule value and the plan cap.
 
 ## SDK Installation
 
-The SDK package is defined in [`sdk/package.json`](./sdk/package.json) as:
+The SDK package is officially published on npm as [`ratelimiter-sdk`](https://www.npmjs.com/package/ratelimiter-sdk).
 
-- name: `@ratelimiter/sdk`
+Install it with:
+
+```bash
+npm install ratelimiter-sdk
+```
+
+The local SDK package is defined in [`sdk/package.json`](./sdk/package.json) as:
+
+- name: `ratelimiter-sdk`
 - version: `1.0.0`
 - main: `dist/index.js`
 - module: `dist/index.mjs`
@@ -835,7 +843,7 @@ npm install @ratelimiter/sdk
 Create a client with:
 
 ```ts
-import { RateLimiterClient } from "@ratelimiter/sdk";
+import { RateLimiterClient } from "ratelimiter-sdk";
 
 const client = new RateLimiterClient({
   apiKey: "sk_live_REDACTED",
@@ -855,7 +863,7 @@ const client = new RateLimiterClient({
 ### Basic check
 
 ```ts
-import { RateLimiterClient } from "@ratelimiter/sdk";
+import { RateLimiterClient } from "ratelimiter-sdk";
 
 const client = new RateLimiterClient({
   apiKey: "sk_live_REDACTED",
